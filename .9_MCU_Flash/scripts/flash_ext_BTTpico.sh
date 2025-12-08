@@ -14,7 +14,7 @@ PASSWORD=$(cat "$PASSWORD_FILE")
 
 # Define the path to the serial ID of MCU
 SERIAL_FILE="/home/biqu/printer_data/config/02__Boards_Serials/Extension_serial.cfg"
-CONFIG_FILE="/home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_Manta_M8P_V2.0/.config"
+CONFIG_FILE="/home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_Pico/.config"
 
 # Extract the serial ID from the serial file
 SERIAL_ID=$(grep "serial:" "$SERIAL_FILE" | awk '{print $2}')
@@ -32,7 +32,7 @@ if [ -z "$SERIAL_ID" ]; then
 fi
 
 # Take the config suited for mainboard
-cp -f /home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_Manta_M8P_V2.0/.config /home/biqu/klipper/
+cp -f /home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_Pico/.config /home/biqu/klipper/
 
 # Go to the Klipper directory
 cd /home/biqu/klipper/
