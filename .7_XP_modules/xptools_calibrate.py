@@ -1,8 +1,15 @@
-
 # Nozzle alignment module for 3d kinematic probes.
 #
-# This module has been adapted from code written by Kevin O'Connor <kevin@koconnor.net> and Martin Hierholzer <martin@hierholzer.info>
-# Sourced from https://github.com/ben5459/Klipper_ToolChanger/blob/master/probe_multi_axis.py
+# Adapted from:
+#   - Kevin O'Connor <kevin@koconnor.net>
+#   - Martin Hierholzer <martin@hierholzer.info>
+# Sourced originally from:
+#   https://github.com/ben5459/Klipper_ToolChanger/blob/master/probe_multi_axis.py
+#
+# IQEX tweaks:
+#   - Robustly select correct X stepper based on active extruder (stepper x/x1/x2/x3)
+#   - Add "pre-trigger clear" backoff so we don't hit "Probe triggered prior to movement"
+#   - Fix get_status(eventtime) signature for Klipper status polling
 
 import logging
 
@@ -49,31 +56,43 @@ class ToolsCalibrate:
         self.last_probe_offset = 0.0
         self.calibration_probe_triggered = False
 
-        self.gcode.register_command('TOOL_LOCATE_SENSOR',
-                                    self.cmd_TOOL_LOCATE_SENSOR,
-                                    desc="Locate the tool calibration sensor, use with tool 0.")
-        self.gcode.register_command('TOOL_CALIBRATE_TOOL_OFFSET',
-                                    self.cmd_TOOL_CALIBRATE_TOOL_OFFSET,
-                                    desc="Calibrate current tool offset relative to tool 0")
-        self.gcode.register_command('TOOL_CALIBRATE_SAVE_TOOL_OFFSET',
-                                    self.cmd_TOOL_CALIBRATE_SAVE_TOOL_OFFSET,
-                                    desc="Save tool offset calibration to config")
-        self.gcode.register_command('TOOL_CALIBRATE_PROBE_OFFSET',
-                                    self.cmd_TOOL_CALIBRATE_PROBE_OFFSET,
-                                    desc="Calibrate the tool probe offset to nozzle tip")
-        self.gcode.register_command('TOOL_CALIBRATE_QUERY_PROBE',
-                                    self.cmd_TOOL_CALIBRATE_QUERY_PROBE,
-                                    desc="Return the state of calibration probe")
+        self.gcode.register_command(
+            'TOOL_LOCATE_SENSOR',
+            self.cmd_TOOL_LOCATE_SENSOR,
+            desc="Locate the tool calibration sensor, use with tool 0."
+        )
+        self.gcode.register_command(
+            'TOOL_CALIBRATE_TOOL_OFFSET',
+            self.cmd_TOOL_CALIBRATE_TOOL_OFFSET,
+            desc="Calibrate current tool offset relative to tool 0"
+        )
+        self.gcode.register_command(
+            'TOOL_CALIBRATE_SAVE_TOOL_OFFSET',
+            self.cmd_TOOL_CALIBRATE_SAVE_TOOL_OFFSET,
+            desc="Save tool offset calibration to config"
+        )
+        self.gcode.register_command(
+            'TOOL_CALIBRATE_PROBE_OFFSET',
+            self.cmd_TOOL_CALIBRATE_PROBE_OFFSET,
+            desc="Calibrate the tool probe offset to nozzle tip"
+        )
+        self.gcode.register_command(
+            'TOOL_CALIBRATE_QUERY_PROBE',
+            self.cmd_TOOL_CALIBRATE_QUERY_PROBE,
+            desc="Return the state of calibration probe"
+        )
 
     def probe_xy(self, toolhead, top_pos, direction, gcmd, samples=None):
         offset = direction_types[direction]
         start_pos = list(top_pos)
         start_pos[offset[0]] -= offset[1] * self.spread
 
+        # Lift up, move to start, lower to probing height
         toolhead.manual_move([None, None, top_pos[2] + self.lift_z], self.lift_speed)
         toolhead.manual_move([start_pos[0], start_pos[1], None], self.travel_speed)
         toolhead.manual_move([None, None, top_pos[2] - self.lower_z], self.lift_speed)
 
+        # Probe in direction
         res = self.probe_multi_axis.run_probe(
             direction, gcmd, samples=samples,
             max_distance=self.spread * 1.8
@@ -91,13 +110,18 @@ class ToolsCalibrate:
         toolhead = self.printer.lookup_object('toolhead')
         position = list(toolhead.get_position())
 
+        # First find Z contact
         downPos = self.probe_multi_axis.run_probe("z-", gcmd, samples=1)
+
+        # Then center in XY at that Z
         center_x, center_y = self.calibrate_xy(toolhead, downPos, gcmd, samples=1)
 
+        # Move above center and do a slower Z touch to refine center Z
         toolhead.manual_move([None, None, downPos[2] + self.lift_z], self.lift_speed)
         toolhead.manual_move([center_x, center_y, None], self.travel_speed)
         center_z = self.probe_multi_axis.run_probe("z-", gcmd, speed_ratio=0.5)[2]
 
+        # Refine XY at refined Z
         center_x, center_y = self.calibrate_xy(toolhead, [center_x, center_y, center_z], gcmd)
 
         position[0] = center_x
@@ -239,6 +263,7 @@ class PrinterProbeMultiAxis:
         phoming = self.printer.lookup_object('homing')
         toolhead = self.printer.lookup_object('toolhead')
 
+        # Pre-check: if already triggered, clear first (prevents "Probe triggered prior to movement")
         try:
             pre = self.mcu_probe[axis].query_endstop(toolhead.get_last_move_time())
         except Exception:
@@ -248,6 +273,39 @@ class PrinterProbeMultiAxis:
             "DEBUG probe begin dir=%s axis=%d sense=%d pre_endstop=%s"
             % (direction_label, axis, sense, str(pre))
         )
+
+        if pre:
+            # Back off opposite the probe direction until the probe releases
+            # Use at least sample_retract_dist, and be a bit more aggressive on Z.
+            backoff = max(self.sample_retract_dist, 2.0)
+            cur = list(toolhead.get_position())
+
+            if axis == 2:  # Z axis: always move UP to release
+                cur[2] = cur[2] + backoff
+            else:
+                # Move opposite the intended direction
+                cur[axis] = cur[axis] - sense * backoff
+
+            self.gcode.respond_info(
+                "DEBUG pretrigger clear: axis=%d moving to %.4f/%.4f/%.4f backoff=%.3f"
+                % (axis, cur[0], cur[1], cur[2], backoff)
+            )
+
+            toolhead.manual_move(cur, self.get_lift_speed())
+
+            # Re-check
+            try:
+                pre2 = self.mcu_probe[axis].query_endstop(toolhead.get_last_move_time())
+            except Exception:
+                pre2 = None
+
+            self.gcode.respond_info("DEBUG pretrigger after clear: pre_endstop=%s" % (str(pre2),))
+
+            if pre2:
+                raise self.printer.command_error(
+                    "Calibration probe still TRIGGERED before movement after backoff. "
+                    "This usually means the pin is sticky / nozzle is still loading it / not enough lift/backoff."
+                )
 
         pos = self._get_target_position(axis, sense, max_distance)
 
@@ -261,6 +319,18 @@ class PrinterProbeMultiAxis:
 
         self.gcode.respond_info("Probe made contact at %.6f,%.6f,%.6f"
                                 % (epos[0], epos[1], epos[2]))
+
+        # Unload probe laterally to avoid residual side-load
+        unload = list(epos)
+        if axis == 0:  # X probe → unload in Y
+            unload[1] += 1.5 * sense
+        elif axis == 1:  # Y probe → unload in X
+            unload[0] += 1.5 * sense
+        elif axis == 2:  # Z probe → unload upward
+            unload[2] += self.sample_retract_dist
+
+        toolhead.manual_move(unload, self.get_lift_speed())
+
         return epos[:3]
 
     def _calc_mean(self, positions):
@@ -337,6 +407,7 @@ class ProbeEndstopWrapper:
             return toolhead.get_status(curtime).get('extruder')
 
     def _get_steppers(self):
+        # IQEX: choose the correct X stepper based on active extruder
         if self.axis == 'x':
             extr = self._active_extruder_name()
             want = {
@@ -384,6 +455,7 @@ class ProbeEndstopWrapper:
             )
             return chosen
 
+        # Y and Z: use whatever Klipper considers active for that axis (gantry selection should control this)
         st = self.mcu_endstop.get_steppers()
         try:
             chosen = [s.get_name() for s in st]
@@ -406,4 +478,3 @@ class ProbeEndstopWrapper:
 
 def load_config(config):
     return ToolsCalibrate(config)
-
