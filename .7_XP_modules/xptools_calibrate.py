@@ -319,6 +319,22 @@ class PrinterProbeMultiAxis:
 
         self.gcode.respond_info("Probe made contact at %.6f,%.6f,%.6f"
                                 % (epos[0], epos[1], epos[2]))
+        # Unload in a way that won't bias XY probing:
+        # - tiny Z lift to relieve the switch/pin
+        # - optional backoff along the probed axis (not perpendicular)
+        unload = list(epos)
+
+        if axis in (0, 1):
+            unload[2] += 0.2  # small lift to clear side-load
+            # back off slightly along the same axis (opposite the probing direction)
+            # sense is +1 for x+/y+, -1 for x-/y-
+            unload[axis] -= sense * min(self.sample_retract_dist, 1.0)
+        else:
+            # Z probe -> normal retract
+            unload[2] += self.sample_retract_dist
+
+        toolhead.manual_move(unload, self.get_lift_speed())
+
         return epos[:3]
 
     def _calc_mean(self, positions):
