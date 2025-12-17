@@ -258,12 +258,6 @@ class PrinterProbeMultiAxis:
         except Exception:
             pre = None
 
-        self.gcode.respond_info(
-            "DEBUG probe begin dir=%s axis=%d sense=%d pre_endstop=%s"
-            % (direction_label, axis, sense, str(pre))
-        )
-
-        # If the probe is already triggered, abort early to avoid shoving harder.
         if pre:
             raise self.printer.command_error("Probe triggered prior to movement")
 
@@ -277,8 +271,6 @@ class PrinterProbeMultiAxis:
                 reason += HINT_TIMEOUT
             raise self.printer.command_error(reason)
 
-        self.gcode.respond_info("Probe made contact at %.6f,%.6f,%.6f"
-                                % (epos[0], epos[1], epos[2]))
         return epos[:3]
 
     def _calc_mean(self, positions):
