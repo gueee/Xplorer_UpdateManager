@@ -258,12 +258,6 @@ class PrinterProbeMultiAxis:
         except Exception:
             pre = None
 
-        self.gcode.respond_info(
-            "DEBUG probe begin dir=%s axis=%d sense=%d pre_endstop=%s"
-            % (direction_label, axis, sense, str(pre))
-        )
-
-        # If the probe is already triggered, abort early to avoid shoving harder.
         if pre:
             raise self.printer.command_error("Probe triggered prior to movement")
 
@@ -277,8 +271,6 @@ class PrinterProbeMultiAxis:
                 reason += HINT_TIMEOUT
             raise self.printer.command_error(reason)
 
-        self.gcode.respond_info("Probe made contact at %.6f,%.6f,%.6f"
-                                % (epos[0], epos[1], epos[2]))
         return epos[:3]
 
     def _calc_mean(self, positions):
@@ -389,118 +381,72 @@ class ProbeEndstopWrapper:
             return toolhead.get_status(curtime).get('extruder')
 
     def _get_steppers(self):
-        """
-        Select steppers based on axis and currently active extruder.
-
-        X: per tool
-          extruder  -> stepper x
-          extruder1 -> stepper x1
-          extruder2 -> stepper x2
-          extruder3 -> stepper x3
-
-        Y: per gantry
-          extruder/extruder1 -> stepper y,  stepper y1
-          extruder2/extruder3 -> stepper y2, stepper y3
-
-        Z (and others): fallback to underlying endstop mapping.
-        """
-        def _fallback(axis_label, extr_name, all_names):
-            st_fb = self.mcu_endstop.get_steppers()
-            try:
-                chosen_fb = [s.get_name() for s in st_fb]
-            except Exception:
-                chosen_fb = [str(s) for s in st_fb]
-            self.printer.lookup_object('gcode').respond_info(
-                f"DEBUG get_steppers axis={axis_label} extr={extr_name} fallback={chosen_fb} all={all_names}"
-            )
-            return st_fb
+        def _norm(name):
+            return str(name).strip().replace(" ", "_")
 
         toolhead = self.printer.lookup_object('toolhead')
         kin = toolhead.get_kinematics()
 
-        all_names = []
+        # Build a normalized-name -> stepper-object map
+        stepper_by_name = {}
         for s in kin.get_steppers():
             try:
-                all_names.append(s.get_name())
+                nm = s.get_name()
             except Exception:
-                all_names.append(str(s))
+                nm = str(s)
+            stepper_by_name[_norm(nm)] = s
 
         extr = self._active_extruder_name()
 
         # X axis: per tool stepper
         if self.axis == 'x':
             want = {
-                'extruder':  ['stepper x'],
-                'extruder1': ['stepper x1'],
-                'extruder2': ['stepper x2'],
-                'extruder3': ['stepper x3'],
+                'extruder':  ['stepper_x'],
+                'extruder1': ['stepper_x1'],
+                'extruder2': ['stepper_x2'],
+                'extruder3': ['stepper_x3'],
             }.get(extr)
 
             if want is None:
-                return _fallback('x', extr, all_names)
+                return self.mcu_endstop.get_steppers()
 
             chosen = []
-            for s in kin.get_steppers():
-                try:
-                    nm = s.get_name()
-                except Exception:
-                    continue
-                if nm in want:
-                    chosen.append(s)
-
-            if len(chosen) != len(want):
-                raise self.printer.command_error(
-                    f"tools_calibrate: axis=x active extruder={extr} expected {want} "
-                    f"but found {[c.get_name() for c in chosen]}. Available steppers: {all_names}"
-                )
-
-            self.printer.lookup_object('gcode').respond_info(
-                f"DEBUG get_steppers axis=x extr={extr} chosen={[s.get_name() for s in chosen]} all={all_names}"
-            )
+            for w in want:
+                ws = stepper_by_name.get(_norm(w))
+                if ws is None:
+                    raise self.printer.command_error(
+                        f"tools_calibrate: axis=x active extruder={extr} expected {want} "
+                        f"but stepper '{w}' was not found"
+                    )
+                chosen.append(ws)
             return chosen
 
         # Y axis: per gantry steppers
         if self.axis == 'y':
             want = {
-                'extruder':  ['stepper y', 'stepper y1'],
-                'extruder1': ['stepper y', 'stepper y1'],
-                'extruder2': ['stepper y2', 'stepper y3'],
-                'extruder3': ['stepper y2', 'stepper y3'],
+                'extruder':  ['stepper_y', 'stepper_y1'],
+                'extruder1': ['stepper_y', 'stepper_y1'],
+                'extruder2': ['stepper_y2', 'stepper_y3'],
+                'extruder3': ['stepper_y2', 'stepper_y3'],
             }.get(extr)
 
             if want is None:
-                return _fallback('y', extr, all_names)
+                return self.mcu_endstop.get_steppers()
 
             chosen = []
-            for s in kin.get_steppers():
-                try:
-                    nm = s.get_name()
-                except Exception:
-                    continue
-                if nm in want:
-                    chosen.append(s)
-
-            if len(chosen) != len(want):
-                raise self.printer.command_error(
-                    f"tools_calibrate: axis=y active extruder={extr} expected {want} "
-                    f"but found {[c.get_name() for c in chosen]}. Available steppers: {all_names}"
-                )
-
-            self.printer.lookup_object('gcode').respond_info(
-                f"DEBUG get_steppers axis=y extr={extr} chosen={[s.get_name() for s in chosen]} all={all_names}"
-            )
+            for w in want:
+                ws = stepper_by_name.get(_norm(w))
+                if ws is None:
+                    raise self.printer.command_error(
+                        f"tools_calibrate: axis=y active extruder={extr} expected {want} "
+                        f"but stepper '{w}' was not found"
+                    )
+                chosen.append(ws)
             return chosen
 
         # Other axes (Z): default wrapper selection
-        st = self.mcu_endstop.get_steppers()
-        try:
-            chosen = [s.get_name() for s in st]
-        except Exception:
-            chosen = [str(s) for s in st]
-        self.printer.lookup_object('gcode').respond_info(
-            f"DEBUG get_steppers axis={self.axis} chosen={chosen}"
-        )
-        return st
+        return self.mcu_endstop.get_steppers()
+
 
     def _handle_mcu_identify(self):
         kin = self.printer.lookup_object('toolhead').get_kinematics()
