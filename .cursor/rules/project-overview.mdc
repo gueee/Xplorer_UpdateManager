@@ -1,0 +1,47 @@
+---
+description: Xplorer 3D Printer Update Manager — project context and conventions
+alwaysApply: true
+---
+
+# Xplorer Update Manager
+
+Centralized Klipper configuration repository for Formbot Xplorer 3D printers, integrated with Mainsail's Update Manager. No build system — this is a pure configuration/asset repo.
+
+## Folder Map
+
+| Folder | Contents |
+|--------|----------|
+| `01_Default_CFG/` | Modular Klipper cfg fragments and variant entry files |
+| `02_Printer_cfg/` | Complete printer bundles (one file per variant+revision) |
+| `03_MODs/` | Formbot official modifications |
+| `04_Slicer_Profiles/` | OrcaSlicer profiles |
+| `05_STEP_FILES/` | CAD parts (V1.0, V1.1) |
+| `06_Manual/` | Printer manuals |
+| `07_Mainsail_Settings/` | Mainsail UI JSON backups |
+| `.7_XP_modules/` | Python Klipper extras (calibration) |
+| `.8_Scripts/` | Shell scripts (resonance, PLR, setup) |
+| `.9_MCU_Flash/` | MCU flashing scripts and Klipper .config files |
+
+## Hardware Variants
+
+- **V1.0**: SINGLE, IDEX, 2xGANTRY
+- **V1.1**: SINGLE, IDEX, 2xGANTRY, IQEX (4-tool)
+
+## Naming Conventions
+
+- Config fragments: `Xp_<Function>.cfg` (e.g. `Xp_Tool0.cfg`, `Xp_Z_Axis.cfg`)
+- V1.1 fragments: `Xp_V1.1_<Function>.cfg`
+- Variant entry files: `Xplorer_<VARIANT>.cfg` / `Xplorer_V1.1_<VARIANT>.cfg`
+- Scripts: descriptive name with tool/axis suffix (e.g. `resonances_X_t0.sh`)
+- Backups: dot-prefixed (`.variables.cfg.bak`)
+
+## Target System
+
+Printer runs on a BTT CB2 (armbian). Key paths on the printer:
+- `/home/biqu/printer_data/config/` — Klipper config root
+- `/home/biqu/klipper/` — Klipper installation
+- `/tmp/` — temporary resonance CSV data
+
+## License
+
+CC BY-NC 4.0 — commercial use requires permission from Formbot.

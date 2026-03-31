@@ -1,0 +1,47 @@
+---
+description: Klipper configuration file conventions and modular include architecture
+globs: "**/*.cfg"
+alwaysApply: false
+---
+
+# Klipper Configuration Files
+
+## Modular Include System
+
+Variant entry files (`Xplorer_*.cfg`) compose the full config by including fragments:
+
+```
+Xplorer_SINGLE.cfg
+  ├── Xp_Xplorer_Vars.cfg        # shared variables
+  ├── Xp_Basic_Settings.cfg       # core printer setup
+  ├── Xp_Tool0.cfg                # extruder/tool definition
+  ├── Xp_X_Axis_SINGLE.cfg        # variant-specific axis
+  ├── Xp_Y_Axis_1xGantry.cfg      # gantry config
+  ├── Xp_Z_Axis.cfg               # Z stepper + tilt
+  ├── Xp_Macros_*.cfg             # GCode macros (Base + variant + per-tool)
+  ├── Xp_SmartSensor_T0.cfg       # filament sensor
+  ├── Xp_Calibrate_offsets_*.cfg  # tool offset calibration
+  ├── Xp_PLR_*.cfg                # power loss recovery
+  ├── Xp_Shell_Commands_*.cfg     # shell command wrappers
+  └── Xp_Mainsail.cfg             # Mainsail UI integration
+```
+
+## Syntax Rules
+
+- Klipper INI-style syntax: `[section_name]` headers, `key: value` or `key = value` pairs
+- Comments use `#` (often `##` for section headers)
+- Section visual separators: `##################################` or `##################################################################`
+- GCode macros use Jinja2 templating: `{% if %}`, `{ printer.* }`, `{ params.* }`
+
+## Key Patterns
+
+- Each variant has its own `[z_tilt]` points and `[bed_mesh]` config
+- Tool definitions go in `Xp_Tool<N>.cfg` (V1.0) or `Xp_V1.1_Tool<N>.cfg` (V1.1)
+- Variables stored in `[gcode_macro _SENSOR_*_VARIABLES]` or `[gcode_macro _XPLORER_VARIABLES]`
+- `[save_variables]` writes to `variables.cfg` on the printer
+
+## When Editing
+
+- Preserve the `[include ...]` order — Klipper processes them sequentially
+- Keep variant-specific settings in the correct variant file, not in shared fragments
+- Test changes against all affected variants (SINGLE, IDEX, 2xGANTRY, IQEX)

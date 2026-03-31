@@ -1,0 +1,38 @@
+---
+description: Python Klipper extras for multi-tool calibration
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python Klipper Modules
+
+Located in `.7_XP_modules/`. These are **Klipper extras** — they extend Klipper's firmware with custom G-Code commands.
+
+## Module Inventory
+
+| Module | Purpose |
+|--------|---------|
+| `tools_calibrate.py` | Multi-axis probe calibration for tool offset measurement |
+| `xptools_calibrate.py` | Xplorer-specific tool calibration extensions |
+| `idextools_calibrate.py` | IDEX-specific dual-extruder calibration |
+| `trsync_patch.py` | Timer-rollover synchronization patch for Klipper |
+
+## Klipper Extras Pattern
+
+Modules follow the Klipper extras convention:
+- Class receives a `config` object in `__init__` and registers G-Code commands
+- Access printer objects via `config.get_printer()` and `printer.lookup_object()`
+- Register commands with `self.gcode.register_command('COMMAND_NAME', handler)`
+- Configuration values read via `config.getfloat()`, `config.get()`, `config.getint()`
+
+## Key Classes
+
+- `ToolsCalibrate` — registers `TOOL_LOCATE_SENSOR`, `TOOL_CALIBRATE_TOOL_OFFSET`, `TOOL_CALIBRATE_SAVE_TOOL_OFFSET`, `TOOL_CALIBRATE_PROBE_OFFSET`
+- `ProbeEndstopWrapper` — wraps MCU endstop pins for multi-axis probing
+- `PrinterProbeMultiAxis` — extends probing to X/Y/Z directions
+
+## When Editing
+
+- These modules run inside the Klipper process — runtime errors can halt the printer
+- Preserve the G-Code command interface (names and parameter names) for macro compatibility
+- Test calibration changes with `TOOL_LOCATE_SENSOR` before running full offset calibration

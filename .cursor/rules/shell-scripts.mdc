@@ -1,0 +1,36 @@
+---
+description: Shell script conventions for resonance calibration and system setup
+globs: "**/*.sh"
+alwaysApply: false
+---
+
+# Shell Scripts
+
+## Target Environment
+
+Scripts run on the printer's BTT CB2 board (armbian, bash). Do not use features unavailable on that platform.
+
+## Resonance Calibration Scripts (`.8_Scripts/resonances_*.sh`)
+
+Naming pattern: `resonances_<AXIS>_<TOOL>.sh` (e.g. `resonances_X_t0.sh`, `resonances_Y_idexmr.sh`)
+
+Standard workflow:
+1. Generate timestamped output filename under `/home/biqu/printer_data/config/03_Resonances_Measurments/`
+2. Find latest CSV from `/tmp/` matching `resonances_<axis>_*.csv` or `calibration_data_<axis>_*.csv`
+3. Run `~/klipper/scripts/calibrate_shaper.py` to produce a PNG graph
+4. Extract recommended shaper type and frequency from output
+5. Backup `variables.cfg` as `.variables.cfg.bak` before modifying
+6. Update or append shaper variables (`shaper_type_*`, `shaper_freq_*`) in `variables.cfg`
+
+## Important Conventions
+
+- **Always backup before modifying** config files (hidden dot-prefix: `.variables.cfg.bak`)
+- Config path: `/home/biqu/printer_data/config/variables.cfg`
+- Use `sed -i` for in-place edits, `grep -q` for existence checks
+- Timestamps: `date +"%H%M"` for time, `date +"%d%m%Y"` for date
+- Exit with code 1 and an error message on failure
+
+## Other Scripts
+
+- `xpplr.sh`, `xpclear_plr.sh`, `xpprint_layer.sh` — power loss recovery helpers
+- `setup_wifi.sh`, `setup_timezone.sh` — first-boot system setup
