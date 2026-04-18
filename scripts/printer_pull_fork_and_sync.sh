@@ -6,11 +6,18 @@ tar czf "${B}" -C "${HOME}" printer_data/config
 echo "Backup: ${B}"
 REPO="${HOME}/Xplorer_UpdateManager"
 if [[ ! -d "${REPO}/.git" ]]; then
-  git clone https://github.com/gueee/Xplorer_UpdateManager.git "${REPO}"
+  git clone --depth 1 --branch main --single-branch \
+    https://github.com/gueee/Xplorer_UpdateManager.git "${REPO}"
 else
   git -C "${REPO}" fetch origin
   git -C "${REPO}" pull --ff-only origin main
 fi
 chmod +x "${REPO}/scripts/sync_fork_to_printer_config.sh"
 bash "${REPO}/scripts/sync_fork_to_printer_config.sh" "${REPO}" "${HOME}/printer_data/config"
-echo "SYNC_OK — restart Klipper from Mainsail."
+if sudo -n systemctl restart klipper 2>/dev/null; then
+  echo "SYNC_OK — klipper restarted."
+elif systemctl restart klipper 2>/dev/null; then
+  echo "SYNC_OK — klipper restarted."
+else
+  echo "SYNC_OK — restart Klipper manually (sudo systemctl restart klipper)."
+fi
