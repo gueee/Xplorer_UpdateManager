@@ -41,7 +41,7 @@ echo "==> rsync ${SRC_DEFAULT}/ -> ${DST_DEFAULT}/ (no --delete: keeps extra fil
 rsync -a "${SRC_DEFAULT}/" "${DST_DEFAULT}/"
 
 if [[ -d "${SRC_DEPLOY}" ]]; then
-  for f in neoprobe.cfg Tool0_carto.cfg Xplorer_V1.1_IDEX_custom.cfg lll_buffer.cfg PLR_2xExtr_carto.cfg; do
+  for f in neoprobe.cfg Tool0_carto.cfg Xplorer_V1.1_IDEX_custom.cfg lll_buffer.cfg PLR_2xExtr_carto.cfg ktamv_offsets.cfg; do
     if [[ -f "${SRC_DEPLOY}/${f}" ]]; then
       cp -a "${SRC_DEPLOY}/${f}" "${DST_USER}/${f}"
       echo "==> updated ${DST_USER}/${f}"
