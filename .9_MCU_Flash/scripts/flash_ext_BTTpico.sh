@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # ===============================
@@ -102,8 +101,8 @@ make || {
 # -------------------------------
 echo "Flashing the firmware to $SERIAL_ID ..."
 
-# If you want to stop Klipper via sudo, uncomment this:
-# echo "$PASSWORD" | sudo -S service klipper stop
+# NU oprim Klipper-ul aici pentru a nu bloca rularea acestui script din Mainsail.
+# RP2040 accepta soft-reboot pe USB in timp ce Klipper ruleaza.
 
 # Flash using sudo and the extracted SERIAL_ID
 echo "$PASSWORD" | sudo -S make flash FLASH_DEVICE="$SERIAL_ID"
@@ -114,12 +113,12 @@ if [ $FLASH_RESULT -ne 0 ]; then
     exit $FLASH_RESULT
 fi
 
-sleep 5
+echo "Waiting for the board to initialize..."
+sleep 3
 
-# Restart Klipper (adjust to your system if sudo is needed)
-service klipper restart || {
-    echo "WARNING: Failed to restart klipper service via 'service klipper restart'"
-    # Not exiting hard here, flashing already succeeded
-}
+# Restartam Klipper complet. Chiar daca scriptul este ucis de acest restart 
+# fiind un proces copil al Klipper, systemd va finaliza repornirea serviciului.
+echo "Triggering Klipper service restart..."
+echo "$PASSWORD" | sudo -S systemctl restart klipper
 
 echo "Firmware flashing complete."

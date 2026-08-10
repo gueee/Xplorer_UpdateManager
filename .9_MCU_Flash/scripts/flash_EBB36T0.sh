@@ -1,63 +1,84 @@
 #!/bin/bash
 
-# Define the path to the password file
+# ===============================
+# Flash Tool 0 (BTT EBB36)
+# ===============================
+
+# Define the paths
 PASSWORD_FILE="/home/biqu/printer_data/config/.system_pass.txt"
+SERIAL_FILE="/home/biqu/printer_data/config/02__Boards_Serials/Tool0_serial.cfg"
+CONFIG_FILE="/home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_EBB36/.config"
+KLIPPER_DIR="/home/biqu/klipper"
+
+echo "=== MCU Flash Script (Tool 0 / BTT EBB36) ==="
 
 # Check if the password file exists
 if [ ! -f "$PASSWORD_FILE" ]; then
-    echo "Password file $PASSWORD_FILE does not exist!"
+    echo "ERROR: Password file $PASSWORD_FILE does not exist!"
     exit 1
 fi
-
-# Read the password from the file
 PASSWORD=$(cat "$PASSWORD_FILE")
-
-# Define the path to the serial ID of MCU
-SERIAL_FILE="/home/biqu/printer_data/config/02__Boards_Serials/Tool0_serial.cfg"
-CONFIG_FILE="/home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_EBB36/.config"
-
-# Extract the serial ID from the serial file
-SERIAL_ID=$(grep "serial:" "$SERIAL_FILE" | awk '{print $2}')
 
 # Check if the configuration file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Configuration file $CONFIG_FILE does not exist!"
+    echo "ERROR: Configuration file $CONFIG_FILE does not exist!"
     exit 1
 fi
 
-# Check if the serial ID was successfully extracted
+# -------------------------------
+# Extract SERIAL_ID (Robust method)
+# -------------------------------
+if [ ! -f "$SERIAL_FILE" ]; then
+    echo "ERROR: Serial file $SERIAL_FILE does not exist!"
+    exit 1
+fi
+
+SERIAL_LINE=$(grep -E '^[[:space:]]*serial\s*:' "$SERIAL_FILE" | head -n 1)
+if [ -z "$SERIAL_LINE" ]; then
+    echo "ERROR: Could not find a 'serial:' line in $SERIAL_FILE!"
+    exit 1
+fi
+
+SERIAL_ID=$(echo "$SERIAL_LINE" | cut -d':' -f2- | xargs)
 if [ -z "$SERIAL_ID" ]; then
-    echo "Could not find serial ID in $SERIAL_FILE!"
+    echo "ERROR: Could not extract SERIAL_ID!"
     exit 1
 fi
 
-# Take the config suited for mainboard
-cp -f /home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_EBB36/.config /home/biqu/klipper/
+echo "Using SERIAL_ID: $SERIAL_ID"
 
-# Go to the Klipper directory
-cd /home/biqu/klipper/
+# -------------------------------
+# Prepare Klipper build
+# -------------------------------
+# Take the config suited for this toolboard
+cp -f "$CONFIG_FILE" "$KLIPPER_DIR/.config"
 
-# Delete the old config and make a new one
-make olddefconfig
-make clean
-make
+cd "$KLIPPER_DIR" || exit 1
 
-# Flash the firmware to the MCU
-echo "Flashing the firmware..."
+echo "Cleaning and building firmware..."
+make olddefconfig || exit 1
+make clean || exit 1
+make || exit 1
 
-# Stop the Klipper service
-#echo "$PASSWORD" | sudo -S service klipper stop
+# -------------------------------
+# Flash firmware
+# -------------------------------
+echo "Flashing the firmware to $SERIAL_ID..."
 
 # Flash the firmware with sudo
 echo "$PASSWORD" | sudo -S make flash FLASH_DEVICE="$SERIAL_ID"
+FLASH_RESULT=$?
 
-sleep 5
+if [ $FLASH_RESULT -ne 0 ]; then
+    echo "ERROR: make flash failed with exit code $FLASH_RESULT"
+    exit $FLASH_RESULT
+fi
 
-reboot
+echo "Waiting for the EBB36 board to initialize..."
+sleep 3
+
+# Restart doar la serviciul Klipper, NU tot sistemul
+echo "Restarting Klipper service..."
+echo "$PASSWORD" | sudo -S systemctl restart klipper
 
 echo "Firmware flashing complete."
-
-
-
-
-
