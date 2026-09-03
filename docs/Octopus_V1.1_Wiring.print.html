@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xplorer V1.1 IDEX — BTT Octopus V1.1 wiring guide</title>
+<style>
+:root { --rule: #b9bfc7; --rule-soft: #dde1e6; --shade: #eef1f4; --warn: #8a5a00; }
+
+@page { size: A4 portrait; margin: 14mm 13mm 15mm; }
+
+* { box-sizing: border-box; }
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  margin: 0 auto;
+  max-width: 190mm;
+  padding: 10mm 6mm;
+  font-family: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-size: 9.8pt;
+  line-height: 1.38;
+  color: #14181d;
+  hyphens: none;
+}
+
+h1 {
+  font-size: 17pt;
+  line-height: 1.2;
+  margin: 0 0 2mm;
+  padding-bottom: 2.5mm;
+  border-bottom: 2.5px solid #14181d;
+  letter-spacing: -0.15pt;
+}
+
+h2 {
+  font-size: 12.5pt;
+  margin: 7mm 0 2.5mm;
+  padding-bottom: 1.2mm;
+  border-bottom: 1px solid var(--rule);
+  break-after: avoid;
+  page-break-after: avoid;
+  break-inside: avoid;
+}
+
+h3 {
+  font-size: 10.6pt;
+  margin: 5mm 0 2mm;
+  break-after: avoid;
+  page-break-after: avoid;
+  break-inside: avoid;
+}
+
+p { margin: 0 0 2.6mm; orphans: 3; widows: 3; }
+
+hr { display: none; }
+
+code {
+  font-family: "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.88em;
+  background: #f2f4f6;
+  border: 1px solid var(--rule-soft);
+  border-radius: 2px;
+  padding: 0 0.3em;
+  white-space: nowrap;
+}
+
+strong { font-weight: 650; }
+
+/* ---- tables ---- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 3.5mm;
+  font-size: 8.9pt;
+  break-inside: auto;
+}
+
+thead { display: table-header-group; }
+tfoot { display: table-footer-group; }
+
+th {
+  background: var(--shade);
+  text-align: left;
+  font-weight: 650;
+  font-size: 8.4pt;
+  text-transform: uppercase;
+  letter-spacing: 0.3pt;
+  border: 1px solid var(--rule);
+  padding: 1.5mm 2mm;
+}
+
+td {
+  border: 1px solid var(--rule-soft);
+  border-left-color: var(--rule);
+  border-right-color: var(--rule);
+  padding: 1.4mm 2mm;
+  vertical-align: top;
+}
+
+tr { break-inside: avoid; page-break-inside: avoid; }
+tbody tr:nth-child(even) td { background: #f8f9fa; }
+td code { background: none; border: none; padding: 0; font-size: 0.92em; }
+
+/* ---- callouts ---- */
+
+blockquote {
+  margin: 0 0 3.5mm;
+  padding: 2.4mm 3mm 2.4mm 3.4mm;
+  border: 1px solid #e0cfa6;
+  border-left: 3.5px solid #c79a24;
+  background: #fdf8ec;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+blockquote p { margin: 0; }
+blockquote strong { color: var(--warn); }
+
+/* ---- lists ---- */
+
+ul, ol { margin: 0 0 3mm; padding-left: 6.5mm; }
+li { margin-bottom: 1.4mm; break-inside: avoid; page-break-inside: avoid; }
+
+ul.task { list-style: none; padding-left: 1mm; }
+
+ul.task li { padding-left: 7mm; position: relative; margin-bottom: 2.2mm; }
+
+ul.task li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 3.6mm;
+  height: 3.6mm;
+  border: 1.2px solid #4a5560;
+  border-radius: 0.6mm;
+  background: #fff;
+}
+
+/* ---- meta ---- */
+
+.subtitle {
+  margin: 0 0 6mm;
+  font-size: 8.4pt;
+  color: #5b656f;
+  letter-spacing: 0.2pt;
+}
+
+.appendix { break-before: page; page-break-before: always; }
+
+@media screen {
+  body { box-shadow: 0 0 0 1px #e5e8eb; background: #fff; margin: 8mm auto; }
+  html { background: #f4f6f8; }
+}
+</style>
+</head>
+<body>
+<h1>Xplorer V1.1 IDEX — BTT Octopus V1.1 wiring guide</h1>
+<p class="subtitle">Printable bench copy &nbsp;·&nbsp; generated from Octopus_V1.1_Wiring.md &nbsp;·&nbsp; 2026-09-02</p>
+<p>Replaces the BTT Manta M8P V2.0 + CB2 with a <strong>BTT Octopus V1.1 (STM32F446)</strong> driven over USB by a <strong>Raspberry Pi 5</strong>. All seven mainboard motors run <strong>TMC2240 in SPI mode</strong>. The two EBB toolboards keep their onboard TMC2209 extruder drivers and are not touched.</p>
+<p>Everything below is derived from the config in <code>_deploy/</code> — if you change the wiring, the config has to change with it.</p>
+<hr>
+<h2>1. What moves and what does not</h2>
+<table><thead><tr><th>Subsystem</th><th>Before</th><th>After</th></tr></thead><tbody><tr><td>Mainboard</td><td>Manta M8P V2.0</td><td>Octopus V1.1</td></tr><tr><td>Host</td><td>CB2 (on the Manta)</td><td>Raspberry Pi 5</td></tr><tr><td>Host ↔ mainboard link</td><td>UART <code>/dev/ttyAMA0</code></td><td>USB-C</td></tr><tr><td>X, X1, Y, Y1, Z, Z1, Z2 drivers</td><td>TMC2209 UART</td><td><strong>TMC2240 SPI</strong></td></tr><tr><td>T0/T1 extruder drivers</td><td>TMC2209 on the EBB</td><td>unchanged</td></tr><tr><td>Hotends, part fans, X endstops, smart sensors</td><td>on the EBB toolboards</td><td>unchanged</td></tr><tr><td>Cartographer V4</td><td>USB</td><td>USB, now to the Pi</td></tr><tr><td>Nozzle alignment camera</td><td>USB</td><td>USB, now to the Pi</td></tr></tbody></table>
+<p>Only 25 mainboard signals exist in this build. Everything on the toolhead is on the toolboards and needs no rework.</p>
+<hr>
+<h2>2. Parts and consumables</h2>
+<ul>
+<li>7 × TMC2240 stepper driver modules (SPI-capable, e.g. BTT TMC2240 V1.0 — <code>rref</code> 12 kΩ)</li>
+<li>Driver heatsinks, plus airflow over the driver bank</li>
+<li>A pile of 2.54 mm jumper caps: SPI jumpers for 7 driver slots, plus 6 fan voltage selectors</li>
+<li>USB-C cable, Pi → Octopus</li>
+<li>Powered USB 2.0 hub (you already have a VIA Labs hub in the machine)</li>
+<li>Official Raspberry Pi 5 27 W USB-C PSU</li>
+</ul>
+<hr>
+<h2>3. Power terminals</h2>
+<p>The Octopus has <strong>four</strong> screw terminals. Feeding all inputs from one 24 V PSU with a common ground is fine.</p>
+<table><thead><tr><th>Terminal</th><th>Connect</th><th>Notes</th></tr></thead><tbody><tr><td><code>PWR IN</code></td><td>24 V from PSU</td><td>Logic, fans, hotend FETs. Must be <strong>&gt; 14.1 V</strong> — do not feed 12 V here</td></tr><tr><td><code>MOTOR PWR</code></td><td>24 V from PSU</td><td>Supplies all eight driver slots. TMC2240 is happy at 24 V</td></tr><tr><td><code>BED IN</code></td><td>24 V from PSU</td><td>Bed heater supply, up to 300 W</td></tr><tr><td><code>BED OUT</code></td><td>to the bed heater pads</td><td>Switched by <code>PA1</code></td></tr></tbody></table>
+<p>Polarity is silkscreened on the <strong>underside</strong> of the board. Getting it wrong kills the board.</p>
+<blockquote><p><strong>MCU power jumper:</strong> there is a jumper that lets the board run off USB-C alone, for DFU flashing. Leave it <strong>off</strong> in normal operation and never fit it while the PSU is connected.</p></blockquote>
+<hr>
+<h2>4. Driver slots and jumpers</h2>
+<h3>4.1 Jumpers — do this before inserting any driver</h3>
+<ol>
+<li><strong>Remove every jumper under all eight driver slots.</strong> Boards ship with UART or microstep jumpers fitted, and leftovers will short the SPI bus.</li>
+<li>Fit the <strong>SPI mode</strong> jumper pattern under slots <strong>0 through 6</strong>. This is section 3.3 of the BTT Octopus user guide ("3.3 SPI MODE") — the pattern is only given as an image, so follow the manual picture rather than any text description. It bridges each driver's <code>SW_MOSI</code> / <code>SW_MISO</code> / <code>SW_SCK</code> pins onto the shared SPI1 bus (<code>PA7</code> / <code>PA6</code> / <code>PA5</code>).</li>
+<li>Leave <strong>slot 7</strong> empty with no jumpers.</li>
+<li><strong>Remove all DIAG jumpers</strong> (section 4.2 of the manual). Those tie a driver's stallguard output onto the very same <code>PG9</code>–<code>PG15</code> inputs we use for physical endstops. A single forgotten DIAG jumper will make an endstop read permanently triggered.</li>
+</ol>
+<p>You cannot mix these SPI drivers with a step/dir driver at anything other than 16 microsteps — the microstep pins are the SPI pins. Not an issue here since every slot is SPI or empty.</p>
+<h3>4.2 Slot → axis → motor connector</h3>
+<p>Drivers all face the same way; line the module's <code>EN</code> pin up with the <code>EN</code> marking on the socket silkscreen.</p>
+<table><thead><tr><th>Slot</th><th>Klipper stepper</th><th>Physical axis</th><th>Motor connector</th><th>CS pin</th></tr></thead><tbody><tr><td>DRIVER0</td><td><code>stepper_x</code></td><td>X, T0 carriage</td><td><code>MOTOR0</code></td><td><code>PC4</code></td></tr><tr><td>DRIVER1</td><td><code>dual_carriage</code></td><td>X1, T1 carriage</td><td><code>MOTOR1</code></td><td><code>PD11</code></td></tr><tr><td>DRIVER2</td><td><code>stepper_y</code></td><td>Y, right side</td><td><strong><code>MOTOR2_1</code></strong></td><td><code>PC6</code></td></tr><tr><td>DRIVER3</td><td><code>stepper_y1</code></td><td>Y1, left side</td><td><code>MOTOR3</code></td><td><code>PC7</code></td></tr><tr><td>DRIVER4</td><td><code>stepper_z</code></td><td>Z, front-left</td><td><code>MOTOR4</code></td><td><code>PF2</code></td></tr><tr><td>DRIVER5</td><td><code>stepper_z1</code></td><td>Z1, back</td><td><code>MOTOR5</code></td><td><code>PE4</code></td></tr><tr><td>DRIVER6</td><td><code>stepper_z2</code></td><td>Z2, front-right</td><td><code>MOTOR6</code></td><td><code>PE1</code></td></tr><tr><td>DRIVER7</td><td>—</td><td>spare</td><td><code>MOTOR7</code></td><td><code>PD3</code></td></tr></tbody></table>
+<blockquote><p><strong>The <code>MOTOR2_1</code> / <code>MOTOR2_2</code> trap.</strong> The Octopus has nine motor connectors but only eight drivers: <code>MOTOR2_1</code> and <code>MOTOR2_2</code> are wired <strong>in parallel off DRIVER2</strong>. Plug Y into <code>MOTOR2_1</code> and leave <code>MOTOR2_2</code> <strong>empty</strong>. Anything plugged into <code>MOTOR2_2</code> moves in lockstep with Y.</p></blockquote>
+<h3>4.3 Motor cable pinout</h3>
+<p>Each header is a 4-pin JST-XH with the coil pairs silkscreened next to it. If you are reusing the Manta harnesses, verify before plugging in: with the motor unplugged, buzz the four wires for continuity — the two that read a few ohms to each other are one coil, and each coil must land on one silkscreened pair.</p>
+<p>If a motor stutters and grinds, the coils are split across the pairs. If a motor simply runs the wrong way, <strong>do not rewire it</strong> — flip the <code>!</code> on that stepper's <code>dir_pin</code> in the config.</p>
+<hr>
+<h2>5. Endstops and switch inputs</h2>
+<p>All eight of these are simple switch-to-GND connections: <strong>signal + GND</strong>. Where a header has a third pin it is a supply rail for powered sensors, which none of these need.</p>
+<table><thead><tr><th>Header</th><th>Pin</th><th>Connect</th><th>Config</th></tr></thead><tbody><tr><td><code>X-STOP</code></td><td><code>PG6</code></td><td><em>nothing</em></td><td>X and X1 home against switches on the EBB toolboards</td></tr><tr><td><code>Y-STOP</code></td><td><code>PG9</code></td><td>Y endstop switch</td><td><code>endstop_pin: ~PG9</code></td></tr><tr><td><code>Z-STOP</code></td><td><code>PG10</code></td><td>Z endstop, front-left</td><td><code>endstop_pin: PG10</code></td></tr><tr><td><code>Z2-STOP</code></td><td><code>PG11</code></td><td>Z1 endstop, back</td><td><code>endstop_pin: PG11</code></td></tr><tr><td><code>E0DET</code></td><td><code>PG12</code></td><td>Z2 endstop, front-right</td><td><code>endstop_pin: PG12</code></td></tr><tr><td><code>E1DET</code></td><td><code>PG13</code></td><td>tool offset contact probe</td><td><code>pin: ^PG13</code></td></tr><tr><td><code>E2DET</code></td><td><code>PG14</code></td><td>T0 (left) buffer runout switch</td><td><code>switch_pin: ^PG14</code></td></tr><tr><td><code>E3DET</code></td><td><code>PG15</code></td><td>T1 (right) buffer runout switch</td><td><code>switch_pin: ^PG15</code></td></tr></tbody></table>
+<p>The three Z switches are physically identical, so label the cables — swapping two of them will make <code>Z_TILT_ADJUST</code> drive the gantry into a corner.</p>
+<p>The dedicated <code>PROBE</code> port (<code>PB7</code>) stays empty; probing is done by the Cartographer over USB.</p>
+<hr>
+<h2>6. Thermistors</h2>
+<p>Non-polarised, either way round.</p>
+<table><thead><tr><th>Header</th><th>Pin</th><th>Connect</th><th>Sensor type in config</th></tr></thead><tbody><tr><td><code>TB</code></td><td><code>PF3</code></td><td>bed thermistor</td><td><code>Generic 3950</code></td></tr><tr><td><code>T0</code> / <code>TH0</code></td><td><code>PF4</code></td><td><em>nothing</em></td><td>hotend thermistors are on the toolboards</td></tr><tr><td><code>T1</code> / <code>TH1</code></td><td><code>PF5</code></td><td>chamber thermistor</td><td><code>EPCOS 100K B57560G104F</code></td></tr><tr><td><code>T2</code> / <code>TH2</code></td><td><code>PF6</code></td><td><em>nothing</em></td><td></td></tr><tr><td><code>T3</code> / <code>TH3</code></td><td><code>PF7</code></td><td><em>nothing</em></td><td></td></tr></tbody></table>
+<hr>
+<h2>7. Heater outputs</h2>
+<table><thead><tr><th>Terminal</th><th>Pin</th><th>Connect</th></tr></thead><tbody><tr><td><code>BED OUT</code> / <code>HB</code></td><td><code>PA1</code></td><td>bed heater pads</td></tr><tr><td><code>HE0</code></td><td><code>PA2</code></td><td><strong>case light LED strip</strong> — <code>[output_pin caselight]</code></td></tr><tr><td><code>HE1</code></td><td><code>PA3</code></td><td><em>nothing</em></td></tr><tr><td><code>HE2</code></td><td><code>PB10</code></td><td><em>nothing</em></td></tr><tr><td><code>HE3</code></td><td><code>PB11</code></td><td><em>nothing</em></td></tr></tbody></table>
+<p>Both hotends are driven by their own EBB toolboards, so no hotend uses these outputs.</p>
+<p>The case light lives on <code>HE0</code> because that mirrors the Manta, where it sat on <code>HE1</code> (<code>PA1</code>). Heater outputs have <strong>no voltage selector</strong> — they are fed straight from <code>PWR IN</code>, so the strip sees 24 V here exactly as it did before. Nothing to set, nothing to get wrong.</p>
+<hr>
+<h2>8. Fan headers and switched outputs</h2>
+<p><strong>Set the voltage selector jumper on each header before you plug anything in.</strong> Every fan header has its own 5 V / 12 V / 24 V selector, and the wrong setting will destroy whatever is attached. Copy the setting each device had on the Manta.</p>
+<table><thead><tr><th>Header</th><th>Pin</th><th>Connect</th><th>Voltage jumper</th></tr></thead><tbody><tr><td><code>FAN0</code></td><td><code>PA8</code></td><td><em>free</em> — case light is on <code>HE0</code>, see section 7</td><td>—</td></tr><tr><td><code>FAN1</code></td><td><code>PE5</code></td><td><em>free</em></td><td>—</td></tr><tr><td><code>FAN2</code></td><td><code>PD12</code></td><td>chamber fan</td><td>match the fan</td></tr><tr><td><code>FAN3</code></td><td><code>PD13</code></td><td>electronics bay fan</td><td>match the fan</td></tr><tr><td><code>FAN4</code></td><td><code>PD14</code></td><td>T0 (left) LLL buffer supply</td><td>match the buffer</td></tr><tr><td><code>FAN5</code></td><td><code>PD15</code></td><td>T1 (right) LLL buffer supply</td><td>match the buffer</td></tr><tr><td>always-on ×2</td><td>—</td><td><em>free</em></td><td>—</td></tr></tbody></table>
+<p>Polarity matters, and BTT swapped the fan polarity silkscreen on some early boards — check against PINS.pdf rather than trusting the underside marking.</p>
+<p>Aim the electronics bay fan across the driver bank. Y and Y1 are set to 1.5 A RMS and Z to 1.4 A; TMC2240 at those currents needs both its heatsink and moving air.</p>
+<h3>PS-ON</h3>
+<table><thead><tr><th>Header</th><th>Pin</th><th>Connect</th></tr></thead><tbody><tr><td><code>PS-ON</code></td><td><code>PE11</code></td><td>PSU relay / SSR control line — <code>[output_pin Power]</code></td></tr></tbody></table>
+<p>This is the board's dedicated PS-ON port, the same function <code>PD14</code> served on the Manta M8P V2.0, so <code>[output_pin Power]</code> carries over unchanged — <code>value: 1</code> still means "PSU on" and the relay wiring is identical. Move the relay control lead across as-is.</p>
+<p>The one board-specific piece is in the firmware build, not the config: the Octopus <code>.config</code> sets <code>CONFIG_INITIAL_PINS="PE11"</code>, mirroring <code>"PD14"</code> on the Manta. That drives PS-ON high the moment the MCU boots, so the PSU stays up through a <code>FIRMWARE_RESTART</code> instead of cutting out before Klipper loads its config.</p>
+<hr>
+<h2>9. USB and the Raspberry Pi 5</h2>
+<p>Six USB devices, and the Pi 5 has four ports. Known identities from the live system:</p>
+<table><thead><tr><th>Device</th><th>USB ID</th><th>Where to plug it</th></tr></thead><tbody><tr><td>Octopus V1.1</td><td><code>stm32f446xx</code>, new serial after flashing</td><td>Pi, direct, <strong>USB 2.0 (black) port</strong></td></tr><tr><td>Cartographer V4</td><td><code>usb-Cartographer_stm32g431xx_350035000550315551333620-if00</code></td><td>Pi, direct</td></tr><tr><td>Tool0 EBB</td><td><code>usb-Klipper_stm32g0b1xx_420019000F504D4D35313220-if00</code></td><td>Pi direct, or hub</td></tr><tr><td>Tool1 EBB</td><td><code>usb-Klipper_stm32g0b1xx_590031000D504D4D35313220-if00</code></td><td>Pi direct, or hub</td></tr><tr><td>Nozzle alignment camera</td><td>Alcor Micro <code>058f:5608</code></td><td>Pi, direct — it wants the bandwidth</td></tr><tr><td>BTT-HDMI5 touchscreen</td><td>Holtek <code>04d9:8030</code></td><td>powered hub</td></tr></tbody></table>
+<p>Put the four MCUs and the camera on the Pi's own ports and hang the touchscreen off the powered hub. USB 2.0 ports are preferable for the MCUs — USB 3.0 buys nothing here and its 2.4 GHz noise is a known source of trouble.</p>
+<blockquote><p><strong>Do not power the Pi 5 from the Octopus.</strong> The board's Raspberry Pi 5 V header cannot supply what a Pi 5 draws. Use the official 27 W USB-C supply.</p></blockquote>
+<p>The <code>[mcu]</code> serial path changes from <code>/dev/ttyAMA0</code> to the Octopus's <code>/dev/serial/by-id/usb-Klipper_stm32f446xx_*-if00</code>. <code>scripts/octopus_cutover.sh</code> reads the real path off the Pi and writes it into <code>02__Boards_Serials/Mainboard_serial.cfg</code> for you.</p>
+<hr>
+<h2>10. Nothing to do on the toolhead</h2>
+<p>For completeness, these stay exactly as they are and connect to the EBB toolboards, not the Octopus: both extruder motors and their TMC2209 drivers, both hotend heaters and thermistors, part cooling and hotend fans, the X and X1 endstops, the smart filament sensors, and the Cartographer probe body.</p>
+<hr>
+<h2>11. Before first power-on</h2>
+<ul class="task">
+<li>PSU unplugged from mains, board unpowered.</li>
+<li>Every driver slot: old jumpers removed, SPI pattern fitted on slots 0–6, slot 7 bare.</li>
+<li><strong>All DIAG jumpers removed.</strong></li>
+<li>MCU USB-power jumper removed.</li>
+<li>Each fan header's voltage selector set for the device on it.</li>
+<li>Polarity checked on <code>PWR IN</code>, <code>MOTOR PWR</code>, <code>BED IN</code>.</li>
+<li>Drivers fully seated, correct orientation, heatsinks fitted.</li>
+</ul>
+<h3>First power-on sequence</h3>
+<ol>
+<li>Flash Klipper via SD card: <code>.9_MCU_Flash/scripts/flash_M1_BTTOctopusV11.sh --build</code>.</li>
+<li>Confirm the board enumerates: <code>ls /dev/serial/by-id/</code> should show <code>stm32f446xx</code>.</li>
+<li>Bring up on <code>_deploy/octopus_bringup_minimal.cfg</code> first — mainboard only, no toolboards.</li>
+<li><code>scripts/octopus_bringup_check.sh</code> for the automated checks.</li>
+<li><code>DUMP_TMC STEPPER=stepper_x</code> (then <code>dual_carriage</code>, <code>stepper_y</code>, <code>stepper_y1</code>, <code>stepper_z</code>, <code>stepper_z1</code>, <code>stepper_z2</code>). Real register values prove the SPI jumpers are right; all-zero or all-<code>ffffffff</code> means that slot's jumpers are wrong.</li>
+<li><code>QUERY_ENDSTOPS</code> — trip each switch by hand and confirm the right one changes state.</li>
+<li><code>FORCE_MOVE</code> each axis a few millimetres to check direction <strong>before</strong> homing anything.</li>
+<li>Swap to the full <code>Xplorer_V1.1_IDEX_custom.cfg</code> and reconnect the toolboards.</li>
+</ol>
+<h3>Things worth re-checking once it runs</h3>
+<ul>
+<li><code>rref: 12000</code> matches BTT TMC2240 modules. A different vendor may use a different reference resistor, and a wrong value silently scales every motor current.</li>
+<li>Run currents were carried over unchanged from the TMC2209 setup. Watch driver temperatures on the first long print — TMC2240 reports its own temperature in <code>DUMP_TMC</code>.</li>
+</ul>
+<hr>
+<h2 class="appendix">Appendix — complete mainboard pin map</h2>
+<table><thead><tr><th>Pin</th><th>Silkscreen</th><th>Function</th></tr></thead><tbody><tr><td><code>PF13</code> <code>PF12</code> <code>PF14</code> <code>PC4</code></td><td>DRIVER0</td><td><code>stepper_x</code> step / dir / enable / CS</td></tr><tr><td><code>PG0</code> <code>PG1</code> <code>PF15</code> <code>PD11</code></td><td>DRIVER1</td><td><code>dual_carriage</code> step / dir / enable / CS</td></tr><tr><td><code>PF11</code> <code>PG3</code> <code>PG5</code> <code>PC6</code></td><td>DRIVER2</td><td><code>stepper_y</code> step / dir / enable / CS</td></tr><tr><td><code>PG4</code> <code>PC1</code> <code>PA0</code> <code>PC7</code></td><td>DRIVER3</td><td><code>stepper_y1</code> step / dir / enable / CS</td></tr><tr><td><code>PF9</code> <code>PF10</code> <code>PG2</code> <code>PF2</code></td><td>DRIVER4</td><td><code>stepper_z</code> step / dir / enable / CS</td></tr><tr><td><code>PC13</code> <code>PF0</code> <code>PF1</code> <code>PE4</code></td><td>DRIVER5</td><td><code>stepper_z1</code> step / dir / enable / CS</td></tr><tr><td><code>PE2</code> <code>PE3</code> <code>PD4</code> <code>PE1</code></td><td>DRIVER6</td><td><code>stepper_z2</code> step / dir / enable / CS</td></tr><tr><td><code>PA5</code> <code>PA6</code> <code>PA7</code></td><td>SPI1</td><td>shared TMC2240 SCK / MISO / MOSI</td></tr><tr><td><code>PG6</code></td><td>X-STOP</td><td>unused</td></tr><tr><td><code>PG9</code></td><td>Y-STOP</td><td>Y endstop</td></tr><tr><td><code>PG10</code></td><td>Z-STOP</td><td>Z endstop</td></tr><tr><td><code>PG11</code></td><td>Z2-STOP</td><td>Z1 endstop</td></tr><tr><td><code>PG12</code></td><td>E0DET</td><td>Z2 endstop</td></tr><tr><td><code>PG13</code></td><td>E1DET</td><td>tool offset contact probe</td></tr><tr><td><code>PG14</code></td><td>E2DET</td><td>T0 buffer runout</td></tr><tr><td><code>PG15</code></td><td>E3DET</td><td>T1 buffer runout</td></tr><tr><td><code>PA1</code></td><td>BED OUT</td><td>bed heater</td></tr><tr><td><code>PA2</code></td><td>HE0</td><td>case light</td></tr><tr><td><code>PF3</code></td><td>TB</td><td>bed thermistor</td></tr><tr><td><code>PF5</code></td><td>T1</td><td>chamber thermistor</td></tr><tr><td><code>PD12</code></td><td>FAN2</td><td>chamber fan</td></tr><tr><td><code>PD13</code></td><td>FAN3</td><td>electronics fan</td></tr><tr><td><code>PD14</code></td><td>FAN4</td><td>T0 buffer supply</td></tr><tr><td><code>PD15</code></td><td>FAN5</td><td>T1 buffer supply</td></tr><tr><td><code>PE11</code></td><td>PS-ON</td><td>PSU control</td></tr></tbody></table>
+</body>
+</html>

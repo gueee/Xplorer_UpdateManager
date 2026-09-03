@@ -1,0 +1,16 @@
+# Disk images / large binaries
+*.img
+*.img.xz
+*.plasticity
+CAD/plasticity/
+CAD/BTT Octopus v1.0 Simple.step
+docs/SDCardFormatter*
+TestPrints/
+# Printer backups & logs (local only)
+Assets/cb2_backup/
+Assets/*.log
+# Build artifacts / secrets
+.9_MCU_Flash/firmware.bin
+__pycache__/
+*.pyc
+.system_pass.txt

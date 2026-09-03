@@ -1,4 +1,4 @@
-path = "/home/biqu/printer_data/config/01__User_Custom__CFG/PLR_2xExtr_carto.cfg"
+path = "/home/gueee/printer_data/config/01__User_Custom__CFG/PLR_2xExtr_carto.cfg"
 with open(path) as f:
     content = f.read()
 

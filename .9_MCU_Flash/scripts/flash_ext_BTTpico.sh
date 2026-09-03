@@ -5,12 +5,12 @@
 # ===============================
 
 # Path to the password file (for sudo)
-PASSWORD_FILE="/home/biqu/printer_data/config/.system_pass.txt"
+PASSWORD_FILE="/home/gueee/printer_data/config/.system_pass.txt"
 
 # Path to the serial file and klipper config template
-SERIAL_FILE="/home/biqu/printer_data/config/02__Boards_Serials/Extension_serial.cfg"
-CONFIG_FILE="/home/biqu/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_Pico/.config"
-KLIPPER_DIR="/home/biqu/klipper"
+SERIAL_FILE="/home/gueee/printer_data/config/02__Boards_Serials/Extension_serial.cfg"
+CONFIG_FILE="/home/gueee/printer_data/config/0_Xplorer/.9_MCU_Flash/MCU_config/BTT_Pico/.config"
+KLIPPER_DIR="/home/gueee/klipper"
 
 echo "=== MCU Flash Script (Extension / BTT Pico) ==="
 
