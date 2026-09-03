@@ -80,11 +80,16 @@ homed** on the new board yet.
   camera are on Pi USB
 - Case light is on `HE0` / `PA2`
 
-### Deployment: editing `_deploy/` does NOT reach the printer
+### Deployment: `0_Xplorer` is a clone of the fork, `01__User_Custom__CFG` is not
 
-There is **no repo clone on the Pi**, so `scripts/sync_fork_to_printer_config.sh`
-cannot run there. Files must be copied with `scp` into
-`~/printer_data/config/01__User_Custom__CFG/`.
+Since 2026-09-03, `~/printer_data/config/0_Xplorer/` on the Pi is a git clone of the
+fork (`gueee/Xplorer_UpdateManager`, branch main) managed by Moonraker's
+`[update_manager Xplorer]`. Push to origin, then update "Xplorer" in Mainsail.
+Never `chmod` inside it on the Pi: a dirty tree disables updates.
+
+`01__User_Custom__CFG/` and `printer.cfg` are still **not** in git. Files under
+`_deploy/` only reach the printer when copied there by hand:
+`cp ~/printer_data/config/0_Xplorer/_deploy/<file> ~/printer_data/config/01__User_Custom__CFG/`.
 
 Overlooking this cost an hour of misdiagnosis: the bed thermistor read a steady
 166 °C and the chamber ~950 °C, which looks exactly like two shorted ADC inputs. The
